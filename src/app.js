@@ -238,6 +238,12 @@ export class ExoApp {
       this.refused = undefined;
       this.data.refused = null;
     }
+    // The gateway counts its quota per key: a pause of the old key does not
+    // hold a new one (saved with the next round).
+    if (keyChanged && this.config.apiKey && this.pause) {
+      this.pause = undefined;
+      this.data.pause = null;
+    }
     this.config = config;
     this.readingKey = key;
     // After a stop, the requests of the new start need a live signal.
@@ -526,17 +532,21 @@ export class ExoApp {
       if (this.pauseActive()) throw new ChronoError('paused');
       if (!ignoreRefusal && this.isRefused()) throw new ChronoError('final_refused');
       this.lastRequestMono = this.monotonic();
+      const client = this.client;
       try {
-        return await call(this.client, this.abort.signal);
+        return await call(client, this.abort.signal);
       } catch (err) {
         // Decided before the next request of the lane may go: a 429 or a quota
-        // pauses it, so does a 5xx of the principal route; a refusal of the
-        // principal route stops it (saved by the caller).
-        if (!this.gone(gen)) {
-          if (err?.code === 'rate_limited' || (err?.code === 'server' && principal)) {
-            this.notePause(err);
-          }
-          if (err?.code === 'refused' && principal) this.noteRefused(err.status);
+        // pauses it, so does a 5xx of the principal route (even when the form
+        // was saved meanwhile: the wait is the key's, and the key is the same);
+        // a refusal of the principal route stops it (saved by the caller).
+        const sameKey = !this.stopped && client === this.client;
+        if (sameKey && (err?.code === 'rate_limited' || (err?.code === 'server' && principal))) {
+          this.notePause(err);
+          if (this.gone(gen)) this.save().catch(() => {});
+        }
+        if (!this.gone(gen) && err?.code === 'refused' && principal) {
+          this.noteRefused(err.status);
         }
         throw err;
       }
@@ -692,6 +702,8 @@ export class ExoApp {
     if (finite(decoded.timestamp) && decoded.timestamp > 0) {
       const age = reference - decoded.timestamp * 1000;
       if (age > FEED_STALE) {
+        // What was held before is not published any more either.
+        net.live = undefined;
         net.problem = { code: 'stale_feed', at: decoded.timestamp * 1000 };
         return;
       }

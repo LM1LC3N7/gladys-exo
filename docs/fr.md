@@ -74,13 +74,18 @@ n’a pas de valeur « inconnue ») :
 
 - aucun passage dans la fenêtre : le texte le dit, **Prochain passage dans**
   et **Retard** ne sont pas mis à jour (jamais un 0 pour « aucun ») ;
-- un retard que le flux ne donne pas (seulement une heure) : **Retard** n’est
-  pas mis à jour ;
+- un retard que le flux ne donne pas (seulement une heure) : le texte dit
+  `retard inconnu` et **Retard** garde le retard d’un passage précédent : lisez-le
+  avec le texte ;
+- l’arrêt absent du flux (numéro mal saisi, autobus sans suivi en temps réel) :
+  le texte dit `Aucune prévision en temps réel pour cet arrêt`, rien n’est
+  compté ;
 - rien lu depuis 10 minutes (2,5 intervalles s’ils sont plus longs) : rien
   n’est publié jusqu’à la prochaine bonne lecture ;
+- un flux sans en-tête ou sans heure propre : illisible, rien publié ;
 - un flux dont l’heure propre a plus de 15 minutes de retard sur l’horloge du
-  portail (en-tête `Date`) : plus du temps réel, rien publié, le statut le
-  dit ;
+  portail (en-tête `Date`) : plus du temps réel, rien publié (pas même ce qui a
+  été lu avant), le statut le dit ;
 - avis non lus depuis 20 minutes : les deux fonctionnalités d’avis ne sont pas
   mises à jour.
 
@@ -102,7 +107,8 @@ filtre ou, sans filtre, parmi les lignes vues à l’arrêt depuis le démarrage
   lecture attend un intervalle entier.
 - **HTTP 429** ou réponse de quota de la passerelle du portail (HTTP 403
   « quota ») : toutes les requêtes attendent (le délai donné par le portail,
-  sinon 1 minute doublée jusqu’à 6 heures), gardé au redémarrage.
+  sinon 1 minute doublée jusqu’à 6 heures), gardé au redémarrage. Le quota est
+  celui de la clé : saisir une autre clé lève l’attente.
 - **5xx** sur le flux d’un réseau : ce réseau attend (1 minute doublée jusqu’à
   30 minutes, ou le délai donné par le portail, jusqu’à 6 heures), les autres
   sont lus normalement ; tous les réseaux essayés en 5xx : toutes les requêtes
@@ -110,7 +116,9 @@ filtre ou, sans filtre, parmi les lignes vues à l’arrêt depuis le démarrage
 - **HTTP 401/403 sur le flux d’un réseau** : la clé est vérifiée une fois sur
   les avis des trains. Refusée là aussi : l’intégration s’arrête et ne réessaie
   pas cette clé d’elle-même, même après un redémarrage ; saisissez une autre
-  clé ou appuyez sur **Tester la clé** (un succès lève l’arrêt). Acceptée là :
+  clé ou appuyez sur **Tester la clé** (un succès lève l’arrêt). Après un
+  redémarrage, une nouvelle clé a 1 chance sur 256 de ressembler à la clé
+  refusée (seuls 8 bits en sont gardés) : appuyez alors sur **Tester la clé**. Acceptée là :
   seul ce réseau attend (5 minutes, doublées jusqu’à 1 heure).
 - Une erreur sur les avis d’un réseau autre qu’un 429 ou une réponse de quota
   (401/403 compris, les passages du réseau venant d’être lus avec la même clé)

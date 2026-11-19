@@ -72,12 +72,17 @@ What is not known is not published (the last value stays; Gladys has no
 
 - no departure in the window: the text says so, **Next departure in** and
   **Delay** are not updated (never a 0 for "none");
-- a delay the feed does not give (only a time): **Delay** is not updated;
+- a delay the feed does not give (only a time): the text says `delay unknown`
+  and **Delay** keeps the delay of an earlier departure: read it with the text;
+- the stop absent from the feed (a mistyped number, a bus without real-time
+  tracking): the text says `No real-time prediction for this stop`, nothing
+  is counted;
 - nothing read for 10 minutes (2.5 intervals when longer): nothing is
   published until the next good read;
+- a feed without its header or its own time: unreadable, nothing published;
 - a feed whose own time is more than 15 minutes older than the portal's
-  clock (`Date` header): not real time any more, nothing published, the
-  status says so;
+  clock (`Date` header): not real time any more, nothing published (not even
+  what was read before), the status says so;
 - alerts not read for 20 minutes: the two alert features are not updated.
 
 Without exo's full timetable (not read: too large for a container), a stop
@@ -97,7 +102,8 @@ among the routes seen at the stop since the start.
   /data cannot be read at start, the first read waits a whole interval.
 - **HTTP 429** or a quota answer of the portal's gateway (HTTP 403 "quota"):
   every request waits (the wait the portal gives, otherwise 1 minute
-  doubling up to 6 hours), kept across restarts.
+  doubling up to 6 hours), kept across restarts. The quota is the key's:
+  entering another key lifts the wait.
 - **5xx** on the feed of one network: that network waits (1 minute doubling
   up to 30 minutes, or the wait the portal gives, up to 6 hours), the others
   are read as usual; every network tried in 5xx: every request waits as for
@@ -105,7 +111,9 @@ among the routes seen at the stop since the start.
 - **HTTP 401/403 on a network feed**: the key is checked once on the alerts
   of the trains. Refused there too: the integration stops and does not try
   this key again by itself, even after a restart; enter another key or press
-  **Test the key** (a success lifts the stop). Accepted there: only that
+  **Test the key** (a success lifts the stop). After a restart, a new key has
+  1 chance in 256 to look like the refused one (only 8 bits of it are kept):
+  press **Test the key** then. Accepted there: only that
   network waits (5 minutes, doubling up to 1 hour).
 - An error on the alerts of a network other than a 429 or a quota answer
   (401/403 included, the departures of the network having just been read

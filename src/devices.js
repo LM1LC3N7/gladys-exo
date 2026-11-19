@@ -160,6 +160,10 @@ export function describe(departure, { now, language }) {
           ? t('early', language, { minutes: -delay })
           : t('onTime', language),
     );
+  } else {
+    // The Delay feature keeps its last value (Gladys has no "unknown"): the
+    // text says this departure's delay is not known.
+    parts.push(t('delayUnknown', language));
   }
   return clean(parts.join(' · '), MAX_TEXT);
 }
@@ -172,7 +176,13 @@ export function describe(departure, { now, language }) {
 export function statesOf(gladys, stop, board, { now, language, lookaheadMinutes, alerts }) {
   const ids = idsOf(gladys, stop);
   const states = [];
-  if (board) {
+  if (board && !board.predicted) {
+    // The feed has nothing for the stop: said in the text, nothing counted.
+    states.push({
+      device_feature_external_id: ids.feature(FEATURE.NEXT),
+      text: t('noPrediction', language),
+    });
+  } else if (board) {
     const next = board.departures[0];
     states.push(
       {

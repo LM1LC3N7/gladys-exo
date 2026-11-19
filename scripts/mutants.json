@@ -20,8 +20,8 @@
   {
     "name": "a 429 is decided in the lane",
     "file": "src/app.js",
-    "from": "if (err?.code === 'rate_limited' || (err?.code === 'server' && principal)) {",
-    "to": "if (err?.code === 'server' && principal) {"
+    "from": "if (sameKey && (err?.code === 'rate_limited' || (err?.code === 'server' && principal))) {",
+    "to": "if (sameKey && err?.code === 'server' && principal) {"
   },
   {
     "name": "a 401 of a network is checked on the principal route",
@@ -196,5 +196,107 @@
     "file": "src/config.js",
     "from": "/^[\\x21-\\x7e]{8,128}$/",
     "to": "/^[\\s\\S]{8,128}$/"
+  },
+  {
+    "name": "a redirect is never followed",
+    "file": "src/client.js",
+    "from": "redirect: 'error',",
+    "to": "redirect: 'follow',"
+  },
+  {
+    "name": "a varint is 10 bytes at most",
+    "file": "src/gtfs.js",
+    "from": "for (let i = 0; i < 10; i += 1) {",
+    "to": "for (let i = 0; i < 11; i += 1) {"
+  },
+  {
+    "name": "a length past its message is refused",
+    "file": "src/gtfs.js",
+    "from": "    if (end > this.end) {",
+    "to": "    if (false) {"
+  },
+  {
+    "name": "only the first bytes of a text are decoded",
+    "file": "src/gtfs.js",
+    "from": "const stop = Math.min(end, start + MAX_ALERT_TEXT * 4);",
+    "to": "const stop = end;"
+  },
+  {
+    "name": "8 translations at most",
+    "file": "src/gtfs.js",
+    "from": "&& out.length < 8) {",
+    "to": ") {"
+  },
+  {
+    "name": "100 selectors at most",
+    "file": "src/gtfs.js",
+    "from": "if (alert.entities.length < MAX_ENTITIES) alert.entities.push(selector);",
+    "to": "alert.entities.push(selector);"
+  },
+  {
+    "name": "500 alerts at most",
+    "file": "src/gtfs.js",
+    "from": "if (alerts.length >= MAX_ALERTS) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "a feed needs its FeedHeader",
+    "file": "src/gtfs.js",
+    "from": "if (!header || !header.version) {",
+    "to": "if (!header) {"
+  },
+  {
+    "name": "a departures feed needs its timestamp",
+    "file": "src/gtfs.js",
+    "from": "if (!(timestamp > 0)) throw new GtfsRealtimeDecodeError('no feed timestamp');",
+    "to": ""
+  },
+  {
+    "name": "a pause read from /data is capped to 6 h",
+    "file": "src/app.js",
+    "from": "const left = Math.min(Math.max(0, pause.until - now), PAUSE_MAX);",
+    "to": "const left = Math.max(0, pause.until - now);"
+  },
+  {
+    "name": "a pause asked is capped to 6 h",
+    "file": "src/app.js",
+    "from": "const wait = Math.min(PAUSE_MAX, Math.max(PAUSE_MIN, asked));",
+    "to": "const wait = Math.max(PAUSE_MIN, asked);"
+  },
+  {
+    "name": "a stop added after a read waits its read",
+    "file": "src/app.js",
+    "from": "if (!slot.stopIds.every((id) => live.ids.has(id))) return undefined;",
+    "to": ""
+  },
+  {
+    "name": "nothing read is not connected",
+    "file": "src/app.js",
+    "from": "return [read > 0, message];",
+    "to": "return [true, message];"
+  },
+  {
+    "name": "a stale feed drops what was held",
+    "file": "src/app.js",
+    "from": "        net.live = undefined;\n",
+    "to": "\n"
+  },
+  {
+    "name": "a stop absent from the feed is no prediction",
+    "file": "src/model.js",
+    "from": "    predicted = true;",
+    "to": ""
+  },
+  {
+    "name": "a new key is not held by the old pause",
+    "file": "src/app.js",
+    "from": "if (keyChanged && this.config.apiKey && this.pause) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "a 429 of a saved-over configuration still pauses",
+    "file": "src/app.js",
+    "from": "const sameKey = !this.stopped && client === this.client;",
+    "to": "const sameKey = !this.gone(gen);"
   }
 ]

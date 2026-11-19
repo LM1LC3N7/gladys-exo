@@ -20,5 +20,9 @@ the notes of the version's GitHub Release.
   button. Read-only.
 - The store lists it for Canada only (`countries: ["CA"]`, Gladys 5.3.0 or
   later).
+- A feed without its header or its time is unreadable (an empty 200 is not
+  "no departure"); a stop absent from the feed says "no real-time
+  prediction"; a stale feed drops what was held; a new key is not held by
+  the pause of the old one.
 - One request per network and interval, one at a time; pauses after 429, the
   gateway's quota and 5xx, and the refused key kept across restarts.

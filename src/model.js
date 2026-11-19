@@ -38,7 +38,7 @@ const finite = (value) => typeof value === 'number' && Number.isFinite(value);
  * The board of a stop at `now` (ms).
  * @param {object[]} stopTimes decoded stop times of the stop's network
  * @param {{ network: string, stopIds: string[], routes: string[] }} stop
- * @returns {{ departures: object[], cancelled: number }}
+ * @returns {{ departures: object[], cancelled: number, predicted: boolean }}
  */
 export function boardOf(stopTimes, stop, { now, lookaheadMinutes }) {
   const ids = new Set(stop.stopIds);
@@ -46,10 +46,15 @@ export function boardOf(stopTimes, stop, { now, lookaheadMinutes }) {
   const to = now + lookaheadMinutes * MINUTE;
   const departures = [];
   const cancelledTrips = new Set();
+  // Any prediction for the stop (and its routes), whatever its time: without
+  // one, the feed says nothing about the stop (a typo, a bus not tracked), which
+  // is not "no departure".
+  let predicted = false;
   for (const st of stopTimes) {
     if (!ids.has(st.stopId)) continue;
     const routeId = String(st.routeId ?? '').toUpperCase();
     if (stop.routes.length && !stop.routes.includes(routeId)) continue;
+    predicted = true;
     const event = finite(st.departure?.time) ? st.departure : st.arrival;
     const time = finite(event?.time) && event.time > 0 ? event.time * 1000 : undefined;
     if (time === undefined || time < from || time > to) continue;
@@ -79,7 +84,11 @@ export function boardOf(stopTimes, stop, { now, lookaheadMinutes }) {
     seen.add(key);
     return true;
   });
-  return { departures: unique, cancelled: Math.min(MAX_COUNT, cancelledTrips.size) };
+  return {
+    departures: unique,
+    cancelled: Math.min(MAX_COUNT, cancelledTrips.size),
+    predicted,
+  };
 }
 
 /** The routes seen at the stop in a read, merged into `seen` (bounded, most recent kept). */

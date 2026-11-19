@@ -31,6 +31,26 @@
       limit 8 MB) and of the alerts (2 MB).
 - [ ] The language tags of the alert texts (`fr`, `en`, `fr-CA`…).
 
+## Before announcing (review r1)
+
+- [ ] Read the terms of the Chrono developer portal: the docs and the notices
+      say CC BY 4.0 for the real-time feeds, which is sure only for exo's
+      static GTFS (exo open data). Correct the attribution if the portal says
+      otherwise.
+
+## Later (review r1, minor)
+
+- [ ] m8: mutants without observed effect (wake of the sleeps at stop, tick
+      re-armed after a stop during a publication, 2.5 intervals of
+      LIVE_STALE, pause count back to 1, doubling of the secondary wait,
+      answers of an old client not muted in three places, a torn /data file
+      not set aside, `retryAfterOf` date branch): kill or mark equivalent.
+- [ ] m9: `store.js` reads the whole /data file before checking its size
+      (a huge file costs memory once).
+- [ ] The Delay feature keeps the delay of an earlier departure when the next
+      one has none (Gladys has no "unknown" value); the text then says the
+      delay is unknown. A dedicated text feature could replace it.
+
 ## Later
 
 - [ ] Stop names of the bus networks (exo's static GTFS: 150 KB of stops per

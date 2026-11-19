@@ -78,7 +78,7 @@ test('two networks: one feed each, the bus stop early, English texts', async () 
 test('a route filter: only line 221, a delay the feed does not give stays unpublished', async () => {
   const s = await setup({ config: { ...TWO, routes_2: '221' } });
   await s.run();
-  assert.equal(s.last(B('next')), '14:14 · ligne 221 · dans 12 min');
+  assert.equal(s.last(B('next')), '14:14 · ligne 221 · dans 12 min · retard inconnu');
   assert.equal(s.last(B('next_in')), 12);
   assert.equal(s.states(B('delay')).length, 0, 'never a 0 for an unknown delay');
   assert.equal(s.gladys.fake.discoveredDevices[1].name, 'exo Laurentides – arrêt 41492 (221)');
@@ -87,7 +87,13 @@ test('a route filter: only line 221, a delay the feed does not give stays unpubl
 
 test('no departure in the window: said in the text, nothing else invented', async () => {
   const s = await setup();
-  s.api.trips.TRAINS = () => [];
+  s.api.trips.TRAINS = () => [
+    tripEntity({
+      id: 'late',
+      routeId: '1',
+      stops: [{ stopId: 'MTL5D', time: NOW + 200 * MINUTE }],
+    }),
+  ];
   await s.run();
   assert.equal(s.last(F('next')), 'Aucun passage dans les 90 prochaines min');
   assert.equal(s.last(F('cancelled')), 0);
@@ -286,26 +292,34 @@ test('a feed older than 15 min against the server Date: nothing published', asyn
   await s.app.stop();
 });
 
-test('a feed without timestamp is never "out of date"', async () => {
+test('a stop absent from the feed: "no prediction", nothing counted', async () => {
   const s = await setup();
-  s.api.override = (path) =>
-    path === '/TRAINS/tripupdate'
-      ? pb(
-          feed({
-            entities: [
-              tripEntity({
-                id: 'x',
-                routeId: '1',
-                stops: [{ stopId: 'MTL5B', time: NOW + 9 * MINUTE + 30 * SECOND }],
-              }),
-            ],
-          }),
-        )
-      : undefined;
+  s.api.trips.TRAINS = () => [];
   await s.run();
-  assert.equal(s.last(F('next_in')), 9);
+  assert.equal(s.last(F('next')), 'Aucune prévision en temps réel pour cet arrêt');
+  assert.equal(s.states(F('cancelled')).length, 0);
+  assert.equal(s.states(F('next_in')).length, 0);
   await s.app.stop();
 });
+
+for (const [name, body] of [
+  ['an empty body', new Uint8Array(0)],
+  ['zeros', Uint8Array.from([0, 0])],
+  ['a header without timestamp', feed({})],
+]) {
+  test(`${name} in a 200 is no feed: nothing published, never "accepted"`, async () => {
+    const s = await setup();
+    s.api.override = (path) => (path.startsWith('/TRAINS/') ? pb(body) : undefined);
+    await s.run();
+    assert.equal(s.gladys.fake.states.length, 0);
+    assert.equal(s.status().connected, false);
+    assert.match(text(s.status().message), /No stop read\. Stop 1: unreadable answer/);
+    if (name !== 'a header without timestamp') {
+      assert.match(text(await act(s)), /No usable answer/, 'the alerts feed is no feed either');
+    }
+    await s.app.stop();
+  });
+}
 
 test('unreadable or oversized answers: nothing published, the next round reads again', async () => {
   const s = await setup();
@@ -505,5 +519,93 @@ test('a request queued behind a refusal is never sent', async () => {
   const ack = await pending;
   assert.match(text(ack.data?.message), /Refused/);
   assert.equal(s.api.calls.length, 1, 'the queued round request was not sent');
+  await s.app.stop();
+});
+
+test('a pause is capped to 6 h: read back from /data or asked by Retry-After', async () => {
+  const { validPause } = await import('../src/app.js');
+  const far = validPause(
+    { until: NOW + 1000 * 3600 * SECOND, count: 1, code: 'rate_limited' },
+    NOW,
+    0,
+  );
+  assert.equal(far.until, NOW + 6 * 3600 * SECOND);
+  const store = createMemoryStore({
+    pause: { until: NOW + 1000 * 3600 * SECOND, count: 1, code: 'server' },
+  });
+  const s = await setup({ store });
+  await s.run();
+  assert.equal(trips(s), 0);
+  await s.advance(6 * 3600 * SECOND);
+  assert.equal(trips(s), 1, 'read at the end of the 6 h');
+  s.api.override = (path) =>
+    path === '/TRAINS/tripupdate' ? pb('', 429, { 'retry-after': '9999999' }) : undefined;
+  await s.advance(MINUTE);
+  assert.equal(trips(s), 2);
+  s.api.override = undefined;
+  await s.advance(6 * 3600 * SECOND - MINUTE);
+  assert.equal(trips(s), 2, 'paused');
+  await s.advance(2 * MINUTE);
+  assert.ok(trips(s) >= 3, 'Retry-After capped to 6 h');
+  await s.app.stop();
+});
+
+test('a stop added after a read publishes nothing until its network is read again', async () => {
+  const s = await setup();
+  await s.run();
+  const config = { ...CONFIG, network_2: 'TRAINS', stop_2: 'MTL3A' };
+  s.api.hold = true;
+  await s.gladys.fake.configUpdated(config);
+  await s.app.publishBoards(s.app.gen);
+  assert.equal(s.states(F('next', 2, 'TRAINS', 'MTL3A')).length, 0, 'its stop times were not kept');
+  assert.ok(s.states(F('next')).length >= 1);
+  s.api.hold = false;
+  s.api.release();
+  await s.advance(25 * SECOND);
+  assert.match(s.last(F('next', 2, 'TRAINS', 'MTL3A')), /ligne 11/);
+  await s.app.stop();
+});
+
+test('a new key is not held by the pause of the old one', async () => {
+  const s = await setup();
+  s.api.override = (path) =>
+    path === '/TRAINS/tripupdate' ? pb('', 429, { 'retry-after': '3600' }) : undefined;
+  await s.run();
+  assert.equal(s.app.pauseActive(), true);
+  s.api.override = undefined;
+  s.api.key = OTHER_KEY;
+  await s.gladys.fake.configUpdated({ ...CONFIG, api_key: OTHER_KEY });
+  await s.advance(30 * SECOND);
+  assert.equal(trips(s), 2);
+  assert.equal(s.status().connected, true);
+  await s.app.stop();
+});
+
+test('a 429 answered to a request of a saved-over configuration still pauses', async () => {
+  const s = await setup();
+  s.api.hold = true;
+  s.api.override = (path) =>
+    path === '/TRAINS/tripupdate' ? pb('', 429, { 'retry-after': '600' }) : undefined;
+  await s.app.connected();
+  await s.advance(SECOND);
+  await s.gladys.fake.configUpdated({ ...CONFIG, routes_1: '11' });
+  s.api.hold = false;
+  s.api.release();
+  await s.advance(MINUTE);
+  assert.equal(trips(s), 1, 'the same key waits');
+  assert.equal(s.app.pauseActive(), true);
+  await s.app.stop();
+});
+
+test('a stale feed: what was held before is not published any more', async () => {
+  const s = await setup();
+  await s.run();
+  const count = s.states(F('next')).length;
+  s.api.timestamp = NOW - 30 * MINUTE;
+  await s.advance(MINUTE);
+  await s.app.connected();
+  await s.advance(2 * MINUTE);
+  assert.equal(s.states(F('next')).length, count);
+  assert.match(text(s.status().message), /not up to date/);
   await s.app.stop();
 });

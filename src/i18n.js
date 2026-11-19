@@ -19,6 +19,11 @@ const TEXTS = {
     en: 'No departure in the next {minutes} min',
     fr: 'Aucun passage dans les {minutes} prochaines min',
   },
+  noPrediction: {
+    en: 'No real-time prediction for this stop',
+    fr: 'Aucune prévision en temps réel pour cet arrêt',
+  },
+  delayUnknown: { en: 'delay unknown', fr: 'retard inconnu' },
   noAlert: { en: 'No alert', fr: 'Aucun avis' },
   alertNoText: { en: 'Alert without text', fr: 'Avis sans texte' },
 

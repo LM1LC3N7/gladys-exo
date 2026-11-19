@@ -73,10 +73,9 @@ test('a malformed feed throws; a huge one keeps MAX_STOP_TIMES and says so', () 
   for (let i = 0; i < MAX_STOP_TIMES + 3; i += 1) {
     many.push(tripEntity({ id: `t${i}`, routeId: '1', stops: [{ stopId: 'A', time: NOW }] }));
   }
-  const out = decodeTripUpdates(feed({ entities: many }), ['A']);
+  const out = decodeTripUpdates(feed({ timestamp: NOW / 1000, entities: many }), ['A']);
   assert.equal(out.stopTimes.length, MAX_STOP_TIMES);
   assert.equal(out.truncated, true);
-  assert.equal(out.timestamp, undefined);
 });
 
 test('the alerts: periods, selectors, texts bounded, a cut character dropped', () => {
@@ -99,6 +98,7 @@ test('the alerts: periods, selectors, texts bounded, a cut character dropped', (
 test('the board: window, cancelled and skipped, NO_DATA, route filter, sorted, unique', () => {
   const { stopTimes } = decodeTripUpdates(
     feed({
+      timestamp: NOW / 1000,
       entities: [
         ...trainTrips(NOW),
         tripEntity({
@@ -141,7 +141,7 @@ test('the board: window, cancelled and skipped, NO_DATA, route filter, sorted, u
     { ...station, routes: ['4'] },
     { now: NOW, lookaheadMinutes: 90 },
   );
-  assert.deepEqual(filtered, { departures: [], cancelled: 1 });
+  assert.deepEqual(filtered, { departures: [], cancelled: 1, predicted: true });
   assert.deepEqual(routesSeen(stopTimes, station, ['220']).slice(0, 1), ['220']);
   assert.ok(routesSeen(stopTimes, station).includes('4'));
 });
@@ -198,7 +198,7 @@ test('the published states: only what is known, never a 0 for "none"', () => {
   const none = statesOf(
     gladys,
     stop,
-    { departures: [], cancelled: 0 },
+    { departures: [], cancelled: 0, predicted: true },
     {
       now: NOW,
       language: 'en',
@@ -276,4 +276,67 @@ test('the train tables: stations, platforms, lines', () => {
   assert.equal(TRAIN_STATIONS.size, 53);
   for (const s of TRAIN_STATIONS.values()) assert.match(s.code, /^\d{5}$/);
   assert.equal(bytes(1, []).length, 2);
+});
+
+test('hostile frames: truncated lengths, endless varints, the caps of the alerts', () => {
+  const head = [...bytes(1, [...str(1, '2.0'), ...vint(3, NOW / 1000)])];
+  // An entity announcing 50 bytes, 3 present.
+  assert.throws(
+    () => decodeAlerts(Uint8Array.from([...head, 0x12, 50, 1, 2, 3])),
+    GtfsRealtimeDecodeError,
+  );
+  // A varint of 11 bytes.
+  assert.throws(
+    () => decodeAlerts(Uint8Array.from([...head, 0x08, ...Array(10).fill(0xff), 0x01])),
+    GtfsRealtimeDecodeError,
+  );
+  // A field whose length runs past the end of the feed.
+  assert.throws(
+    () => decodeAlerts(Uint8Array.from([...head, 0x4a, 100, 1, 2])),
+    GtfsRealtimeDecodeError,
+  );
+  // A header without its required version, a body without header.
+  assert.throws(
+    () => decodeTripUpdates(Uint8Array.from([...bytes(1, vint(3, NOW / 1000))]), []),
+    /no FeedHeader/,
+  );
+  assert.throws(() => decodeAlerts(new Uint8Array(0)), /no FeedHeader/);
+  // A nested length past its parent's end.
+  assert.throws(
+    () => decodeAlerts(Uint8Array.from([...head, 0x12, 3, 0x2a, 9, 0x00])),
+    GtfsRealtimeDecodeError,
+  );
+  const translations = {};
+  for (let i = 0; i < 12; i += 1) translations[`l${i}`] = `t${i}`;
+  const selectors = Array.from({ length: 105 }, (_, i) => ({ stopId: `s${i}` }));
+  const alerts = Array.from({ length: 503 }, (_, i) =>
+    alertEntity({ id: `a${i}`, entities: i ? [{ stopId: 'x' }] : selectors, header: translations }),
+  );
+  const out = decodeAlerts(feed({ timestamp: NOW / 1000, entities: alerts }));
+  assert.equal(out.alerts.length, 500);
+  assert.equal(out.truncated, true);
+  assert.equal(out.alerts[0].entities.length, 100);
+  assert.equal(out.alerts[0].entitiesTruncated, true);
+  assert.equal(out.alerts[0].header.length, 8);
+});
+
+test('a long alert text: only its first bytes are ever decoded', (t) => {
+  const seen = [];
+  const decode = TextDecoder.prototype.decode;
+  TextDecoder.prototype.decode = function (input, ...rest) {
+    seen.push(input?.length ?? 0);
+    return decode.call(this, input, ...rest);
+  };
+  t.after(() => {
+    TextDecoder.prototype.decode = decode;
+  });
+  const { alerts } = decodeAlerts(
+    feed({
+      entities: [
+        alertEntity({ id: 'a', entities: [{ stopId: 'x' }], header: { '': 'x'.repeat(100_000) } }),
+      ],
+    }),
+  );
+  assert.equal(alerts[0].header[0].text.length, MAX_ALERT_TEXT);
+  assert.ok(Math.max(...seen) <= MAX_ALERT_TEXT * 4, `${Math.max(...seen)} bytes decoded`);
 });

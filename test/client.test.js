@@ -159,3 +159,23 @@ test('the waits asked: Retry-After in seconds or as a date, the quota texts', ()
   assert.equal(quotaWaitOf('Try again in 5 seconds.'), 5000);
   assert.equal(quotaWaitOf('nothing'), undefined);
 });
+
+test('a redirect is never followed: the key never reaches another host', async (t) => {
+  const other = [];
+  const elsewhere = createServer((req, res) => {
+    other.push(req.headers);
+    res.writeHead(200, { 'content-type': 'application/x-protobuf' });
+    res.end(feed({ timestamp: 1 }));
+  });
+  await new Promise((resolve) => elsewhere.listen(0, '127.0.0.1', resolve));
+  t.after(async () => {
+    elsewhere.closeAllConnections?.();
+    await new Promise((resolve) => elsewhere.close(resolve));
+  });
+  const { client } = await serve(t, (req, res) => {
+    res.writeHead(302, { location: `http://127.0.0.1:${elsewhere.address().port}/x` });
+    res.end();
+  });
+  assert.equal(await code(client.feed('TRAINS', 'alert')), 'network');
+  assert.equal(other.length, 0);
+});

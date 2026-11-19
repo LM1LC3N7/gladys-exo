@@ -289,15 +289,19 @@ function readTripUpdate(reader, stopIds) {
 
 /** FeedHeader -> its timestamp (POSIX seconds), undefined when absent. */
 function readHeader(reader) {
-  let timestamp;
+  const header = { version: '', timestamp: undefined };
   forEachField(reader, (field, wire) => {
+    if (field === 1 && wire === WIRE.LENGTH_DELIMITED) {
+      header.version = reader.readString().slice(0, 16);
+      return true;
+    }
     if (field === 3 && wire === WIRE.VARINT) {
-      timestamp = reader.readVarint();
+      header.timestamp = reader.readVarint();
       return true;
     }
     return false;
   });
-  return timestamp;
+  return header;
 }
 
 /**
@@ -306,10 +310,10 @@ function readHeader(reader) {
  */
 function readFeed(buffer, wanted, onEntity) {
   const reader = new Reader(buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer));
-  let timestamp;
+  let header;
   forEachField(reader, (field, wire) => {
     if (field === 1 && wire === WIRE.LENGTH_DELIMITED) {
-      timestamp = readHeader(reader.readMessage());
+      header = readHeader(reader.readMessage());
       return true;
     }
     if (field === 2 && wire === WIRE.LENGTH_DELIMITED) {
@@ -332,7 +336,13 @@ function readFeed(buffer, wanted, onEntity) {
     }
     return false;
   });
-  return timestamp;
+  // A FeedMessage always opens with its FeedHeader, whose version is required by
+  // the proto: an empty body, zeros or a foreign message are not a feed (a
+  // gateway answering 200 with nothing is not "no departure").
+  if (!header || !header.version) {
+    throw new GtfsRealtimeDecodeError('no FeedHeader');
+  }
+  return header.timestamp;
 }
 
 /**
@@ -367,6 +377,8 @@ export function decodeTripUpdates(buffer, watchedStopIds) {
       });
     }
   });
+  // Without the time of the feed, its age cannot be checked: never served as live.
+  if (!(timestamp > 0)) throw new GtfsRealtimeDecodeError('no feed timestamp');
   return { timestamp, stopTimes, truncated };
 }
 
