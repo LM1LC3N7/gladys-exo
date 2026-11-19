@@ -1,6 +1,6 @@
 {
   "name": "gladys-exo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "exo (Montréal suburban trains and buses) for Gladys Assistant: next departures, delays, cancellations and service alerts, read from the GTFS-Realtime feeds of the ARTM's Chrono developer portal with your free key. Read-only. Unofficial, not affiliated with exo nor the ARTM.",
   "type": "module",

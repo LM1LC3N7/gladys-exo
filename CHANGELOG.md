@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-19
+
 ### Added
 
 - First version: up to four exo stops (trains and buses of the Montréal area)
@@ -26,3 +28,6 @@ the notes of the version's GitHub Release.
   the pause of the old one.
 - One request per network and interval, one at a time; pauses after 429, the
   gateway's quota and 5xx, and the refused key kept across restarts.
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-exo/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-exo/releases/tag/v0.1.1

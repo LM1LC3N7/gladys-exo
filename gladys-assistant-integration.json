@@ -6,8 +6,8 @@
     "en": "Unofficial: exo trains and buses, next departures, delays and alerts, with your free key.",
     "fr": "Non officiel : trains et autobus exo, prochains passages, retards et avis, avec votre clé gratuite."
   },
-  "version": "0.1.0",
-  "docker_image": "ghcr.io/lm1lc3n7/gladys-exo:0.1.0",
+  "version": "0.1.1",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-exo:0.1.1",
   "gladys_version": ">=5.3.0",
   "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-exo/main/cover.png",
   "categories": ["transport"],
