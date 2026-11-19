@@ -196,10 +196,14 @@ Mont-Saint-Hilaire (SH), 14 Candiac (CA), 15 Mascouche (MA).
 
 ## Data and license
 
-Data: exo (Réseau de transport métropolitain), through the
+Data: exo (Réseau de transport métropolitain). exo's static GTFS
+([exo's open data](https://exo.quebec/en/about/open-data)), from which the
+station and line tables come, is under the
+[Creative Commons Attribution 4.0 license (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+The real-time data comes from the
 [Chrono developer portal](https://portail-developpeur.chrono-saeiv.com/) of
-the ARTM and [exo's open data](https://exo.quebec/en/about/open-data), under
-the [Creative Commons Attribution 4.0 license (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+the ARTM, under the terms of use of the portal, which you accept when you
+register there.
 The data is modified: the predictions are filtered by stop and route and
 summarised (next departure, delay in whole minutes, count of cancellations,
 count of alerts and the text of the main one). The station and line tables

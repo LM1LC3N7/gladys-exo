@@ -11,7 +11,9 @@ ARTM.
 - User documentation: [English](docs/en.md), [français](docs/fr.md).
 - Built with [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js);
   rules for contributors in [CLAUDE.md](CLAUDE.md), open points in [TODO.md](TODO.md).
-- Data: exo, CC BY 4.0 (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+- Data: exo. Static GTFS of exo under CC BY 4.0; real-time data of the ARTM's
+  Chrono portal under the portal's terms of use, accepted by the user at
+  registration (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 
 ```bash
 npm install

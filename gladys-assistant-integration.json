@@ -22,8 +22,8 @@
         "fr": "Clé du portail développeur Chrono"
       },
       "description": {
-        "en": "The departures and alerts come from the official GTFS-Realtime feeds of exo, served by the Chrono developer portal of the ARTM. Create a free account there, subscribe to the exo open data and paste your key below. Read-only: nothing is ever changed on exo's side. Unofficial integration, not affiliated with exo nor the ARTM. Data: exo, CC BY 4.0.",
-        "fr": "Les passages et les avis viennent des flux GTFS-Realtime officiels d’exo, servis par le portail développeur Chrono de l’ARTM. Créez-y un compte gratuit, abonnez-vous aux données ouvertes d’exo et collez votre clé ci-dessous. Lecture seule : rien n’est jamais modifié chez exo. Intégration non officielle, sans lien avec exo ni l’ARTM. Données : exo, CC BY 4.0."
+        "en": "The departures and alerts come from the official GTFS-Realtime feeds of exo, served by the Chrono developer portal of the ARTM. Create a free account there, subscribe to the exo open data and paste your key below. Read-only: nothing is ever changed on exo's side. Unofficial integration, not affiliated with exo nor the ARTM. Data: exo. Static GTFS under CC BY 4.0; real-time data under the terms of use of the Chrono portal, accepted when you register.",
+        "fr": "Les passages et les avis viennent des flux GTFS-Realtime officiels d’exo, servis par le portail développeur Chrono de l’ARTM. Créez-y un compte gratuit, abonnez-vous aux données ouvertes d’exo et collez votre clé ci-dessous. Lecture seule : rien n’est jamais modifié chez exo. Intégration non officielle, sans lien avec exo ni l’ARTM. Données : exo. GTFS statique sous CC BY 4.0 ; données en temps réel selon les conditions d’utilisation du portail Chrono, acceptées à votre inscription."
       },
       "links": [
         {

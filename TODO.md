@@ -33,10 +33,10 @@
 
 ## Before announcing (review r1)
 
-- [ ] Read the terms of the Chrono developer portal: the docs and the notices
-      say CC BY 4.0 for the real-time feeds, which is sure only for exo's
-      static GTFS (exo open data). Correct the attribution if the portal says
-      otherwise.
+- [x] Licence (r2, m7): docs, README, manifest and notices now say CC BY 4.0
+      for exo's static GTFS only, and the portal's terms of use (accepted at
+      registration) for the real-time data. Read those terms with a real
+      account and adjust if they ask for a specific attribution.
 
 ## Later (review r1, minor)
 

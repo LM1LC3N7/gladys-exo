@@ -201,10 +201,14 @@ Mont-Saint-Hilaire (SH), 14 Candiac (CA), 15 Mascouche (MA).
 
 ## Données et licence
 
-Données : exo (Réseau de transport métropolitain), par le
+Données : exo (Réseau de transport métropolitain). Le GTFS statique d’exo
+([données ouvertes d’exo](https://exo.quebec/fr/a-propos/donnees-ouvertes)),
+d’où viennent les tableaux des gares et des lignes, est sous
+[licence Creative Commons Attribution 4.0 (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.fr).
+Les données en temps réel viennent du
 [portail développeur Chrono](https://portail-developpeur.chrono-saeiv.com/)
-de l’ARTM et les [données ouvertes d’exo](https://exo.quebec/fr/a-propos/donnees-ouvertes),
-sous [licence Creative Commons Attribution 4.0 (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.fr).
+de l’ARTM, selon les conditions d’utilisation du portail, que vous acceptez à
+votre inscription.
 Les données sont modifiées : les prévisions sont filtrées par arrêt et par
 ligne puis résumées (prochain passage, retard en minutes entières, nombre
 d’annulations, nombre d’avis et texte du principal). Les tableaux des gares et
