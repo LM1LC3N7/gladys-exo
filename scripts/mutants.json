@@ -1,0 +1,200 @@
+[
+  {
+    "name": "one request at a time, REQUEST_GAP apart",
+    "file": "src/app.js",
+    "from": "if (wait > 0) await this.sleep(wait);",
+    "to": "if (false) await this.sleep(wait);"
+  },
+  {
+    "name": "a pause stops a queued request",
+    "file": "src/app.js",
+    "from": "if (this.pauseActive()) throw new ChronoError('paused');",
+    "to": "if (false) throw new ChronoError('paused');"
+  },
+  {
+    "name": "a refusal stops a queued request",
+    "file": "src/app.js",
+    "from": "if (!ignoreRefusal && this.isRefused()) throw new ChronoError('final_refused');",
+    "to": "if (false) throw new ChronoError('final_refused');"
+  },
+  {
+    "name": "a 429 is decided in the lane",
+    "file": "src/app.js",
+    "from": "if (err?.code === 'rate_limited' || (err?.code === 'server' && principal)) {",
+    "to": "if (err?.code === 'server' && principal) {"
+  },
+  {
+    "name": "a 401 of a network is checked on the principal route",
+    "file": "src/app.js",
+    "from": "if (err?.code === 'refused') return this.secondary(gen, net, err);",
+    "to": "if (err?.code === 'refused') throw new ChronoError('final_refused');"
+  },
+  {
+    "name": "refused on the principal route is final",
+    "file": "src/app.js",
+    "from": "      if (check?.code === 'refused' && !this.gone(gen)) {\n        await this.refuse(check.status);",
+    "to": "      if (false) {\n        await this.refuse(check.status);"
+  },
+  {
+    "name": "a 401 of the alerts is never a refusal",
+    "file": "src/app.js",
+    "from": "if (code === 'rate_limited' || code === 'paused' || code === 'final_refused') throw err;",
+    "to": "if (code === 'rate_limited' || code === 'paused' || code === 'final_refused' || code === 'refused') throw err;"
+  },
+  {
+    "name": "a 5xx holds its network only",
+    "file": "src/app.js",
+    "from": "if (err?.code === 'server' && !this.gone(gen)) return this.holdNetwork(net, err);",
+    "to": "if (false) return this.holdNetwork(net, err);"
+  },
+  {
+    "name": "every network in 5xx pauses all",
+    "file": "src/app.js",
+    "from": "if (!ok && tried > 0 && serverFailed === tried && lastServer) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "a feed older than FEED_STALE is not published",
+    "file": "src/app.js",
+    "from": "if (age > FEED_STALE) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "held departures age out",
+    "file": "src/app.js",
+    "from": "if (!live || mono - live.mono > this.liveStale()) return undefined;",
+    "to": "if (!live) return undefined;"
+  },
+  {
+    "name": "held alerts age out",
+    "file": "src/app.js",
+    "from": "if (!held || mono - held.mono > ALERT_STALE) return undefined;",
+    "to": "if (!held) return undefined;"
+  },
+  {
+    "name": "the alerts wait their interval",
+    "file": "src/app.js",
+    "from": "if (this.monotonic() < net.alertsDue) return;",
+    "to": "if (false) return;"
+  },
+  {
+    "name": "a restart waits the rest of the interval",
+    "file": "src/app.js",
+    "from": "due = finite(last) && last <= now ? mono + Math.max(0, interval - (now - last)) : mono;",
+    "to": "due = mono;"
+  },
+  {
+    "name": "a time of /data in the future is ignored",
+    "file": "src/app.js",
+    "from": "due = finite(last) && last <= now ? mono",
+    "to": "due = finite(last) ? mono"
+  },
+  {
+    "name": "/data unreadable is never written",
+    "file": "src/app.js",
+    "from": "    if (this.storeState !== 'ok') return false;\n    const snapshot",
+    "to": "    const snapshot"
+  },
+  {
+    "name": "/data unreadable: a whole interval",
+    "file": "src/app.js",
+    "from": "        due = mono + interval;\n",
+    "to": "        due = mono;\n"
+  },
+  {
+    "name": "a changed key is always tried",
+    "file": "src/app.js",
+    "from": "if (keyChanged && this.config.apiKey && this.refused) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "the test button lifts a refusal",
+    "file": "src/app.js",
+    "from": "      if (this.refused) {\n        this.refused = undefined;",
+    "to": "      if (false) {\n        this.refused = undefined;"
+  },
+  {
+    "name": "the test button once in 30 s",
+    "file": "src/app.js",
+    "from": "if (this.lastTest && mono - this.lastTest.mono < TEST_MIN_GAP) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "getConfig() failing is retried",
+    "file": "src/app.js",
+    "from": "        this.connected().catch((e) => this.log.error(`Start failed (${e?.name ?? 'Error'})`));",
+    "to": "        void 0;"
+  },
+  {
+    "name": "the Retry-After is honoured",
+    "file": "src/app.js",
+    "from": "const asked = finite(err.retryAfter) ? err.retryAfter : PAUSE_MIN * 2 ** (count - 1);",
+    "to": "const asked = PAUSE_MIN * 2 ** (count - 1);"
+  },
+  {
+    "name": "a quota 403 is a wait",
+    "file": "src/client.js",
+    "from": "const quota = /quota|rate limit/i.test(text);",
+    "to": "const quota = false;"
+  },
+  {
+    "name": "answers cut past their limit (streamed)",
+    "file": "src/client.js",
+    "from": "    if (size > max) {\n      await reader.cancel()",
+    "to": "    if (false) {\n      await reader.cancel()"
+  },
+  {
+    "name": "no delay published without the feed's delay",
+    "file": "src/devices.js",
+    "from": "if (next.delay !== undefined) {",
+    "to": "if (true) {"
+  },
+  {
+    "name": "no next_in for no departure",
+    "file": "src/devices.js",
+    "from": "    if (next) {\n      states.push({",
+    "to": "    {\n      states.push({"
+  },
+  {
+    "name": "cancelled trips are not departures",
+    "file": "src/model.js",
+    "from": "      cancelledTrips.add(key);\n      continue;",
+    "to": "      cancelledTrips.add(key);"
+  },
+  {
+    "name": "a departure that left is dropped",
+    "file": "src/model.js",
+    "from": "if (time === undefined || time < from || time > to) continue;",
+    "to": "if (time === undefined || time > to) continue;"
+  },
+  {
+    "name": "the route filter",
+    "file": "src/model.js",
+    "from": "if (stop.routes.length && !stop.routes.includes(routeId)) continue;",
+    "to": ""
+  },
+  {
+    "name": "an ended alert does not count",
+    "file": "src/model.js",
+    "from": "  if (!alert.periods.length) return true;",
+    "to": "  return true;"
+  },
+  {
+    "name": "every field of a selector must match",
+    "file": "src/model.js",
+    "from": "if (!routes.includes(String(selector.routeId).toUpperCase())) return false;",
+    "to": ""
+  },
+  {
+    "name": "a stop without network is not guessed",
+    "file": "src/config.js",
+    "from": "      stops.push({ slot, input, network: '', invalid: 'no_network' });\n      continue;",
+    "to": "      continue;"
+  },
+  {
+    "name": "the key never reaches a header malformed",
+    "file": "src/config.js",
+    "from": "/^[\\x21-\\x7e]{8,128}$/",
+    "to": "/^[\\s\\S]{8,128}$/"
+  }
+]

@@ -1,177 +1,630 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "exo",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Unofficial: exo trains and buses, next departures, delays and alerts, with your free key.",
+    "fr": "Non officiel : trains et autobus exo, prochains passages, retards et avis, avec votre clé gratuite."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-exo:0.1.0",
+  "gladys_version": ">=5.3.0",
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-exo/main/cover.png",
+  "categories": ["transport"],
+  "countries": ["CA"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Chrono developer portal key",
+        "fr": "Clé du portail développeur Chrono"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "The departures and alerts come from the official GTFS-Realtime feeds of exo, served by the Chrono developer portal of the ARTM. Create a free account there, subscribe to the exo open data and paste your key below. Read-only: nothing is ever changed on exo's side. Unofficial integration, not affiliated with exo nor the ARTM. Data: exo, CC BY 4.0.",
+        "fr": "Les passages et les avis viennent des flux GTFS-Realtime officiels d’exo, servis par le portail développeur Chrono de l’ARTM. Créez-y un compte gratuit, abonnez-vous aux données ouvertes d’exo et collez votre clé ci-dessous. Lecture seule : rien n’est jamais modifié chez exo. Intégration non officielle, sans lien avec exo ni l’ARTM. Données : exo, CC BY 4.0."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://portail-developpeur.chrono-saeiv.com/",
+          "label": {
+            "en": "Chrono developer portal",
+            "fr": "Portail développeur Chrono"
+          }
+        },
+        {
+          "url": "https://exo.quebec/en/about/open-data",
+          "label": {
+            "en": "exo open data",
+            "fr": "Données ouvertes d’exo"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "Key of the Chrono portal",
+        "fr": "Clé du portail Chrono"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The key of your subscription on the Chrono developer portal. Kept by Gladys in its database, never shown again, sent only to the Chrono portal of the ARTM.",
+        "fr": "La clé de votre abonnement au portail développeur Chrono. Gardée par Gladys dans sa base, jamais réaffichée, envoyée seulement au portail Chrono de l’ARTM."
+      },
+      "required": false
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "stops",
+      "type": "section",
+      "label": {
+        "en": "Stops",
+        "fr": "Arrêts"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+      "description": {
+        "en": "Up to four stops, one Gladys device each. Bus: choose the network and type the number shown on the stop sign (e.g. 41492). Train: choose Trains and type the code of the station (11010 for Gare Centrale, list in the documentation) for both directions, or the stop_id of one platform (MTL5D). Routes: optional filter, e.g. \"220, 221\" or train line \"11\".",
+        "fr": "Jusqu’à quatre arrêts, un appareil Gladys chacun. Autobus : choisissez le réseau et saisissez le numéro inscrit sur le panneau de l’arrêt (par ex. 41492). Train : choisissez Trains et saisissez le code de la gare (11010 pour la Gare Centrale, liste dans la documentation) pour les deux directions, ou le stop_id d’un quai (MTL5D). Lignes : filtre facultatif, par ex. « 220, 221 » ou la ligne de train « 11 »."
+      },
+      "links": [
+        {
+          "url": "https://github.com/LM1LC3N7/gladys-exo/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "key": "network_1",
+      "type": "select",
+      "label": {
+        "en": "Stop 1: network",
+        "fr": "Arrêt 1 : réseau"
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "options": [
+        {
+          "value": "TRAINS",
+          "label": {
+            "en": "Trains (all lines)",
+            "fr": "Trains (toutes les lignes)"
+          }
+        },
+        {
+          "value": "CITLA",
+          "label": {
+            "en": "Laurentides buses",
+            "fr": "Autobus Laurentides"
+          }
+        },
+        {
+          "value": "CITPI",
+          "label": {
+            "en": "La Presqu’Île buses",
+            "fr": "Autobus La Presqu’Île"
+          }
+        },
+        {
+          "value": "CITSO",
+          "label": {
+            "en": "Sud-Ouest buses",
+            "fr": "Autobus Sud-Ouest"
+          }
+        },
+        {
+          "value": "CITSV",
+          "label": {
+            "en": "Sorel-Varennes buses",
+            "fr": "Autobus Sorel-Varennes"
+          }
+        },
+        {
+          "value": "CITCRC",
+          "label": {
+            "en": "Chambly-Richelieu-Carignan buses",
+            "fr": "Autobus Chambly-Richelieu-Carignan"
+          }
+        },
+        {
+          "value": "CITVR",
+          "label": {
+            "en": "Vallée du Richelieu buses",
+            "fr": "Autobus Vallée du Richelieu"
+          }
+        },
+        {
+          "value": "LRRS",
+          "label": {
+            "en": "Le Richelain and Roussillon buses",
+            "fr": "Autobus Le Richelain et Roussillon"
+          }
+        },
+        {
+          "value": "OMITSJU",
+          "label": {
+            "en": "Sainte-Julie buses",
+            "fr": "Autobus Sainte-Julie"
+          }
+        },
+        {
+          "value": "MRCLM",
+          "label": {
+            "en": "Terrebonne-Mascouche buses",
+            "fr": "Autobus Terrebonne-Mascouche"
+          }
+        },
+        {
+          "value": "MRCLASSO",
+          "label": {
+            "en": "L’Assomption buses",
+            "fr": "Autobus L’Assomption"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_1",
+      "type": "string",
+      "label": {
+        "en": "Stop 1: stop number or station code",
+        "fr": "Arrêt 1 : numéro d’arrêt ou code de gare"
+      },
+      "placeholder": {
+        "en": "e.g. 41492 or 11010",
+        "fr": "ex. 41492 ou 11010"
+      },
+      "required": false
+    },
+    {
+      "key": "routes_1",
+      "type": "string",
+      "label": {
+        "en": "Stop 1: routes (optional)",
+        "fr": "Arrêt 1 : lignes (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. 220, 221",
+        "fr": "ex. 220, 221"
+      },
+      "required": false
+    },
+    {
+      "key": "network_2",
+      "type": "select",
+      "label": {
+        "en": "Stop 2: network",
+        "fr": "Arrêt 2 : réseau"
+      },
+      "required": false,
+      "options": [
+        {
+          "value": "TRAINS",
+          "label": {
+            "en": "Trains (all lines)",
+            "fr": "Trains (toutes les lignes)"
+          }
+        },
+        {
+          "value": "CITLA",
+          "label": {
+            "en": "Laurentides buses",
+            "fr": "Autobus Laurentides"
+          }
+        },
+        {
+          "value": "CITPI",
+          "label": {
+            "en": "La Presqu’Île buses",
+            "fr": "Autobus La Presqu’Île"
+          }
+        },
+        {
+          "value": "CITSO",
+          "label": {
+            "en": "Sud-Ouest buses",
+            "fr": "Autobus Sud-Ouest"
+          }
+        },
+        {
+          "value": "CITSV",
+          "label": {
+            "en": "Sorel-Varennes buses",
+            "fr": "Autobus Sorel-Varennes"
+          }
+        },
+        {
+          "value": "CITCRC",
+          "label": {
+            "en": "Chambly-Richelieu-Carignan buses",
+            "fr": "Autobus Chambly-Richelieu-Carignan"
+          }
+        },
+        {
+          "value": "CITVR",
+          "label": {
+            "en": "Vallée du Richelieu buses",
+            "fr": "Autobus Vallée du Richelieu"
+          }
+        },
+        {
+          "value": "LRRS",
+          "label": {
+            "en": "Le Richelain and Roussillon buses",
+            "fr": "Autobus Le Richelain et Roussillon"
+          }
+        },
+        {
+          "value": "OMITSJU",
+          "label": {
+            "en": "Sainte-Julie buses",
+            "fr": "Autobus Sainte-Julie"
+          }
+        },
+        {
+          "value": "MRCLM",
+          "label": {
+            "en": "Terrebonne-Mascouche buses",
+            "fr": "Autobus Terrebonne-Mascouche"
+          }
+        },
+        {
+          "value": "MRCLASSO",
+          "label": {
+            "en": "L’Assomption buses",
+            "fr": "Autobus L’Assomption"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_2",
+      "type": "string",
+      "label": {
+        "en": "Stop 2: stop number or station code",
+        "fr": "Arrêt 2 : numéro d’arrêt ou code de gare"
+      },
+      "placeholder": {
+        "en": "e.g. 41492 or 11010",
+        "fr": "ex. 41492 ou 11010"
+      },
+      "required": false
+    },
+    {
+      "key": "routes_2",
+      "type": "string",
+      "label": {
+        "en": "Stop 2: routes (optional)",
+        "fr": "Arrêt 2 : lignes (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. 220, 221",
+        "fr": "ex. 220, 221"
+      },
+      "required": false
+    },
+    {
+      "key": "network_3",
+      "type": "select",
+      "label": {
+        "en": "Stop 3: network",
+        "fr": "Arrêt 3 : réseau"
+      },
+      "required": false,
+      "options": [
+        {
+          "value": "TRAINS",
+          "label": {
+            "en": "Trains (all lines)",
+            "fr": "Trains (toutes les lignes)"
+          }
+        },
+        {
+          "value": "CITLA",
+          "label": {
+            "en": "Laurentides buses",
+            "fr": "Autobus Laurentides"
+          }
+        },
+        {
+          "value": "CITPI",
+          "label": {
+            "en": "La Presqu’Île buses",
+            "fr": "Autobus La Presqu’Île"
+          }
+        },
+        {
+          "value": "CITSO",
+          "label": {
+            "en": "Sud-Ouest buses",
+            "fr": "Autobus Sud-Ouest"
+          }
+        },
+        {
+          "value": "CITSV",
+          "label": {
+            "en": "Sorel-Varennes buses",
+            "fr": "Autobus Sorel-Varennes"
+          }
+        },
+        {
+          "value": "CITCRC",
+          "label": {
+            "en": "Chambly-Richelieu-Carignan buses",
+            "fr": "Autobus Chambly-Richelieu-Carignan"
+          }
+        },
+        {
+          "value": "CITVR",
+          "label": {
+            "en": "Vallée du Richelieu buses",
+            "fr": "Autobus Vallée du Richelieu"
+          }
+        },
+        {
+          "value": "LRRS",
+          "label": {
+            "en": "Le Richelain and Roussillon buses",
+            "fr": "Autobus Le Richelain et Roussillon"
+          }
+        },
+        {
+          "value": "OMITSJU",
+          "label": {
+            "en": "Sainte-Julie buses",
+            "fr": "Autobus Sainte-Julie"
+          }
+        },
+        {
+          "value": "MRCLM",
+          "label": {
+            "en": "Terrebonne-Mascouche buses",
+            "fr": "Autobus Terrebonne-Mascouche"
+          }
+        },
+        {
+          "value": "MRCLASSO",
+          "label": {
+            "en": "L’Assomption buses",
+            "fr": "Autobus L’Assomption"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_3",
+      "type": "string",
+      "label": {
+        "en": "Stop 3: stop number or station code",
+        "fr": "Arrêt 3 : numéro d’arrêt ou code de gare"
+      },
+      "placeholder": {
+        "en": "e.g. 41492 or 11010",
+        "fr": "ex. 41492 ou 11010"
+      },
+      "required": false
+    },
+    {
+      "key": "routes_3",
+      "type": "string",
+      "label": {
+        "en": "Stop 3: routes (optional)",
+        "fr": "Arrêt 3 : lignes (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. 220, 221",
+        "fr": "ex. 220, 221"
+      },
+      "required": false
+    },
+    {
+      "key": "network_4",
+      "type": "select",
+      "label": {
+        "en": "Stop 4: network",
+        "fr": "Arrêt 4 : réseau"
+      },
+      "required": false,
+      "options": [
+        {
+          "value": "TRAINS",
+          "label": {
+            "en": "Trains (all lines)",
+            "fr": "Trains (toutes les lignes)"
+          }
+        },
+        {
+          "value": "CITLA",
+          "label": {
+            "en": "Laurentides buses",
+            "fr": "Autobus Laurentides"
+          }
+        },
+        {
+          "value": "CITPI",
+          "label": {
+            "en": "La Presqu’Île buses",
+            "fr": "Autobus La Presqu’Île"
+          }
+        },
+        {
+          "value": "CITSO",
+          "label": {
+            "en": "Sud-Ouest buses",
+            "fr": "Autobus Sud-Ouest"
+          }
+        },
+        {
+          "value": "CITSV",
+          "label": {
+            "en": "Sorel-Varennes buses",
+            "fr": "Autobus Sorel-Varennes"
+          }
+        },
+        {
+          "value": "CITCRC",
+          "label": {
+            "en": "Chambly-Richelieu-Carignan buses",
+            "fr": "Autobus Chambly-Richelieu-Carignan"
+          }
+        },
+        {
+          "value": "CITVR",
+          "label": {
+            "en": "Vallée du Richelieu buses",
+            "fr": "Autobus Vallée du Richelieu"
+          }
+        },
+        {
+          "value": "LRRS",
+          "label": {
+            "en": "Le Richelain and Roussillon buses",
+            "fr": "Autobus Le Richelain et Roussillon"
+          }
+        },
+        {
+          "value": "OMITSJU",
+          "label": {
+            "en": "Sainte-Julie buses",
+            "fr": "Autobus Sainte-Julie"
+          }
+        },
+        {
+          "value": "MRCLM",
+          "label": {
+            "en": "Terrebonne-Mascouche buses",
+            "fr": "Autobus Terrebonne-Mascouche"
+          }
+        },
+        {
+          "value": "MRCLASSO",
+          "label": {
+            "en": "L’Assomption buses",
+            "fr": "Autobus L’Assomption"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_4",
+      "type": "string",
+      "label": {
+        "en": "Stop 4: stop number or station code",
+        "fr": "Arrêt 4 : numéro d’arrêt ou code de gare"
+      },
+      "placeholder": {
+        "en": "e.g. 41492 or 11010",
+        "fr": "ex. 41492 ou 11010"
+      },
+      "required": false
+    },
+    {
+      "key": "routes_4",
+      "type": "string",
+      "label": {
+        "en": "Stop 4: routes (optional)",
+        "fr": "Arrêt 4 : lignes (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. 220, 221",
+        "fr": "ex. 220, 221"
+      },
+      "required": false
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options"
+      },
+      "description": {
+        "en": "The feeds are read every interval (one request per network, whatever the number of stops), the alerts every 5 minutes at most.",
+        "fr": "Les flux sont lus à chaque intervalle (une requête par réseau, quel que soit le nombre d’arrêts), les avis toutes les 5 minutes au plus."
+      }
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the values",
+        "fr": "Langue des valeurs"
+      },
+      "description": {
+        "en": "Language of the feature names, of the published texts and of the alerts when exo gives both.",
+        "fr": "Langue des noms de fonctionnalités, des textes publiés et des avis quand exo donne les deux."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français"
+          }
+        },
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais"
+          }
+        }
+      ]
+    },
+    {
+      "key": "poll_seconds",
+      "type": "number",
+      "label": {
+        "en": "Read interval (seconds)",
+        "fr": "Intervalle de lecture (secondes)"
+      },
+      "required": false,
+      "default": 60,
+      "min": 30,
+      "max": 600
+    },
+    {
+      "key": "lookahead_minutes",
+      "type": "number",
+      "label": {
+        "en": "Departures shown up to (minutes ahead)",
+        "fr": "Passages pris en compte jusqu’à (minutes)"
+      },
+      "required": false,
+      "default": 90,
+      "min": 15,
+      "max": 240
+    },
+    {
+      "key": "alerts",
+      "type": "boolean",
+      "label": {
+        "en": "Read the service alerts",
+        "fr": "Lire les avis de service"
+      },
+      "description": {
+        "en": "Adds the number of active alerts of the stop and the text of the main one.",
+        "fr": "Ajoute le nombre d’avis actifs de l’arrêt et le texte du principal."
+      },
+      "required": false,
+      "default": true
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "test_connection",
+      "timeout_seconds": 45,
+      "label": {
+        "en": "Test the key",
+        "fr": "Tester la clé"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
       "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
-    }
-  ],
-  "widgets": [
-    {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
-      },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+        "en": "Sends one request to the Chrono portal (at most every 30 s) and tells whether it accepts the key. A success lifts a refusal.",
+        "fr": "Envoie une requête au portail Chrono (au plus toutes les 30 s) et dit s’il accepte la clé. Un succès lève un refus."
+      }
     }
   ]
 }
